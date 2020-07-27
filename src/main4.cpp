@@ -7,10 +7,9 @@
 #include "shade.h"
 #include "gpgpu.h"
 #include "stefanfw.h"
-#include "convolve_fft.h"
 #include "simplexnoise.h"
 int wsx = 1280, wsy = 720;
-int scale = 4;
+int scale = 40;
 int sx = wsx / ::scale;
 int sy = wsy / ::scale;
 
@@ -26,28 +25,18 @@ struct Walker {
 	vec2 acc;
 	vec2 displacement;
 	Walker() {
-		pos.x = randFloat(0, sx);
-		pos.y = randFloat(0, sy);
 	}
 	void update() {
-		/*if (app::getElapsedFrames() % 100 == 0) {
-			acc = ci::randVec2() * ci::randFloat() * .1f;
-		}
-		vel += acc;
-		vel *= .8f;
-		pos += vel;
-		pos.x = fmod(pos.x, sx - 1);
-		pos.y = fmod(pos.y, sy - 1);
-		if (pos.x < 0) pos.x += sx - 1;
-		if (pos.y < 0) pos.y += sy - 1;*/
-		//vec2 displacement;
 		float nscale = 10 / (float)sx; // both for x and y so we preserve aspect ratio
 		displacement.x = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 0.0) * 40.0f;
 		displacement.y = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 1.0) * 40.0f;
 	}
 };
 
-vector<Walker> walkers;
+Array2D<Walker> walkers;
+
+gl::GlslProgRef prog;
+gl::VboMeshRef	vboMesh;
 
 struct SApp : App {
 	void setup()
@@ -60,9 +49,39 @@ struct SApp : App {
 
 		stefanfw::eventHandler.subscribeToEvents(*this);
 
-		for (int i = 0; i < 1000; i++) {
-			walkers.push_back(Walker());
+		walkers = Array2D<Walker>(sx+1, sy+1, Walker());
+		forxy(walkers) {
+			walkers(p).pos = p;
 		}
+
+		string vs = Str()
+			<< "#version 150"
+			<< "uniform mat4 ciModelViewProjection;"
+			<< "in vec4 ciPosition;"
+		
+			<< "void main()"
+			<< "{"
+			<< "	gl_Position = ciModelViewProjection * ciPosition;"
+			<< "}";
+
+		auto plane = geom::Plane().size(vec2(wsx, wsy)).subdivisions(ivec2(sx, sy))
+			.axes(vec3(1,0,0), vec3(0,1,0));
+		vector<gl::VboMesh::Layout> bufferLayout = {
+			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::POSITION, 3)
+		};
+
+		vboMesh = gl::VboMesh::create(plane, bufferLayout);
+
+		auto mappedPosAttrib = vboMesh->mapAttrib3f(geom::Attrib::POSITION, false);
+		for (int i = 0; i < vboMesh->getNumVertices(); i++) {
+			vec3 &pos = *mappedPosAttrib;
+			//vec3 pos = vec3(walkers(i).pos, 0);
+			mappedPosAttrib->x = pos.x + sin(pos.x) * 50;
+			mappedPosAttrib->y = pos.y + sin(pos.y) * 50;
+			mappedPosAttrib->z = 0;
+			++mappedPosAttrib;
+		}
+		mappedPosAttrib.unmap();
 	}
 	void update()
 	{
@@ -92,75 +111,26 @@ struct SApp : App {
 
 		noiseTimeDim += .008f;
 		for (auto& walker: walkers) {
-			walker.update();
+			//walker.update();
 		}
 
-		Array2D<float> img(sx, sy, 0);
-		for (auto& walker : walkers) {
-			//img.wr(walker.pos + walker.displacement) = 1.0f;
-			aaPoint(img, walker.pos + walker.displacement, .1f);
-		}
-
-		auto invKernelf = getKernelf(img.Size(),
-			[&](float f) { return 1.0f / pow(f, exponent); });
-			//[&](float f) { return exp(-f * exponent); });
-			//[&](float f) { return 1.0f / (1 + sq(f / 4.0f)); });
-		auto longTailKernelf = getKernelf(img.Size(),
-			[&](float f) { return 1.0f / (1 + f * f / 16); },
-			true);
-
-		auto convolvedLong = convolveFft(img, longTailKernelf);
-		auto convolvedLongTex = gtex(convolvedLong);
-
-		Array2D<vec2> sparseInfoArr(walkers.size(), 1, vec2());
-		int i = 0;
-		for (auto& walker : walkers) {
-			sparseInfoArr(i, 0) = walker.pos;
-			i++;
-		}
-
-		auto sparseInfoTex = gtex(sparseInfoArr);
-		globaldict["imgWidth"] = img.w;
-		tex = shade2(convolvedLongTex, sparseInfoTex,
-			"float accum = 0.0;"
-			"vec2 here = gl_FragCoord.xy;"
-			"for(int i = 0; i < textureSize(tex2, 0).x; i++) {"
-			"	vec2 walkerPos = texelFetch(tex2, ivec2(i, 0), 0).xy;" // CORRECT?
-			"	float blurWidth = texelFetch(tex, ivec2(walkerPos), 0).x;"
-			"	float blurWidthBak = blurWidth;"
-			"	blurWidth = blurWidth *mouse.y* 100000;"
-			"	float dist = distance(here, walkerPos);"
-			//"	accum += 1.0 / (1.0 + dist * dist *(blurWidth*blurWidth)) * blurWidthBak;" // todo: NORMALIZED KERNEL
-			"	accum += exp(-dist*dist*(blurWidth*blurWidth)) * blurWidthBak;"
-			"}"
-			"_out = vec3(accum);"
-			, ShadeOpts().ifmt(GL_R32F)
-		);
-		auto texDld = gettexdata<float>(tex, GL_RED, GL_FLOAT);
-		::mm(texDld, "texDld");
-		texDld = ::to01(texDld);
-		tex = gtex(texDld);
+		
+		//tex = gtex(texDld);
 	}
 	void stefanDraw() {
-		//static auto tex = maketex(sx, sy, GL_R16F);
-		//gl::draw(tex, getWindowBounds());
-		/*gl::clear();
-		gl::begin(GL_POINTS);
-		gl::color(Color::white());
-		for (auto& walker : walkers) {
-			gl::vertex(walker.pos);
-		}
-		gl::end();*/
-		auto tex2 = shade2(tex,
-			"float f = fetch1();"
-			//"_out.r = f / (f + 1.0f);");
-			//"for(int i = 0; i < 10; i++) f = smoothstep(0, 1, f);"
-			//"float fw = fwidth(f);"
-			//"f = smoothstep(0.6 - fw/2, .6 + fw/2, f);"
-			"_out.r = f;");
-		gl::clear();
+
 		gl::setMatricesWindow(getWindowSize(), false);
-		gl::draw(tex2, getWindowBounds());
+		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		gl::disableDepthRead();
+		//gl::begin(GL_POINTS);
+		gl::color(Color(.03*mouseY,0,0));
+		gl::enableAdditiveBlending();
+		gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
+		gl::draw(vboMesh);
+		//for (auto& walker : walkers) {
+		//	gl::vertex(walker.pos + walker.displacement);
+		//}
+		//gl::end();
 	}
 };
 

@@ -106,7 +106,7 @@
     <Link>
       <AdditionalDependencies>libfftw3f-3.lib;cinder.lib;opencv_core320.lib;opencv_imgproc320.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>Z:\stuff\Dev\referenced\lib;Z:\stuff\Dev\referenced\lib\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>false</OptimizeReferences>
