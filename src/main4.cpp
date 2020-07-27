@@ -9,7 +9,7 @@
 #include "stefanfw.h"
 #include "simplexnoise.h"
 int wsx = 1280, wsy = 720;
-int scale = 40;
+int scale = 4;
 int sx = wsx / ::scale;
 int sy = wsy / ::scale;
 
@@ -118,19 +118,23 @@ struct SApp : App {
 		//tex = gtex(texDld);
 	}
 	void stefanDraw() {
+		auto target = maketex(wsx, wsy, GL_RGB16F);
+		::beginRTT(target);
 
-		gl::setMatricesWindow(getWindowSize(), false);
+		gl::setMatricesWindow(vec2(sx, sy), false);
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::disableDepthRead();
-		//gl::begin(GL_POINTS);
-		gl::color(Color(.03*mouseY,0,0));
+		gl::color(Colorf(.03*mouseY,0,0));
 		gl::enableAdditiveBlending();
-		gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
-		gl::draw(vboMesh);
-		//for (auto& walker : walkers) {
-		//	gl::vertex(walker.pos + walker.displacement);
-		//}
-		//gl::end();
+		{
+			gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
+			gl::draw(vboMesh);
+		}
+		::endRTT();
+
+		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		gl::setMatricesWindow(vec2(wsx, wsy), false);
+		gl::draw(target, getWindowBounds());
 	}
 };
 
