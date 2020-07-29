@@ -116,6 +116,21 @@ struct SApp : App {
 			}
 		}
 		mappedPosAttrib.unmap();
+
+		auto mappedCustom0Attrib = vboMesh->mapAttrib3f(geom::Attrib::CUSTOM_0, false);
+		for (int i = 0; i <= sx; i++) {
+			for (int j = 0; j <= sy; j++) {
+				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
+				vec3 &pos = *mappedCustom0Attrib;
+				//vec3 pos = vec3(walkers(i).pos, 0);
+				auto walker = walkers(i, j);
+				mappedCustom0Attrib->x = walker.pos.x + walker.displacement.x;// +sin(pos.x) * 50;
+				mappedCustom0Attrib->y = walker.pos.y + walker.displacement.y;// +sin(pos.y) * 50;
+				mappedCustom0Attrib->z = 0;
+				++mappedCustom0Attrib;
+			}
+		}
+		mappedCustom0Attrib.unmap();
 	}
 
 	void stefanDraw() {
@@ -127,7 +142,6 @@ struct SApp : App {
 		gl::setMatricesWindow(vec2(sx, sy), false);
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::disableDepthRead();
-		gl::color(Colorf(.3*mouseY,0,0));
 		gl::enableAdditiveBlending();
 		{
 			auto vs = CI_GLSL(150,
@@ -164,7 +178,9 @@ struct SApp : App {
 
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::setMatricesWindow(vec2(wsx, wsy), false);
+		gl::color(Colorf(.3*mouseY, 0, 0));
 		gl::draw(target, getWindowBounds());
+		gl::color(Colorf(1,1,1));
 	}
 };
 
