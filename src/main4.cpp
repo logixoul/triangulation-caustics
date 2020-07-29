@@ -19,7 +19,7 @@ bool pause;
 
 gl::TextureRef tex;
 
-/*struct Walker {
+struct Walker {
 	vec2 pos;
 	vec2 vel;
 	vec2 acc;
@@ -33,7 +33,7 @@ gl::TextureRef tex;
 	}
 };
 
-Array2D<Walker> walkers;*/
+Array2D<Walker> walkers;
 
 gl::GlslProgRef prog;
 gl::VboMeshRef	vboMesh;
@@ -49,10 +49,10 @@ struct SApp : App {
 
 		stefanfw::eventHandler.subscribeToEvents(*this);
 
-		//walkers = Array2D<Walker>(sx+1, sy+1, Walker());
-		/*forxy(walkers) {
+		walkers = Array2D<Walker>(sx+1, sy+1, Walker());
+		forxy(walkers) {
 			walkers(p).pos = p;
-		}*/
+		}
 
 		string vs = Str()
 			<< "#version 150"
@@ -73,13 +73,16 @@ struct SApp : App {
 		vboMesh = gl::VboMesh::create(plane, bufferLayout);
 
 		auto mappedPosAttrib = vboMesh->mapAttrib3f(geom::Attrib::POSITION, false);
-		for (int i = 0; i < vboMesh->getNumVertices(); i++) {
-			vec3 &pos = *mappedPosAttrib;
-			//vec3 pos = vec3(walkers(i).pos, 0);
-			mappedPosAttrib->x = pos.x;// +sin(pos.x) * 50;
-			mappedPosAttrib->y = pos.y;// +sin(pos.y) * 50;
-			mappedPosAttrib->z = 0;
-			++mappedPosAttrib;
+		for (int i = 0; i <= sx; i++) {
+			for (int j = 0; j <= sy; j++) {
+				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
+				vec3 &pos = *mappedPosAttrib;
+				//vec3 pos = vec3(walkers(i).pos, 0);
+				mappedPosAttrib->x = i;// +sin(pos.x) * 50;
+				mappedPosAttrib->y = j;// +sin(pos.y) * 50;
+				mappedPosAttrib->z = 0;
+				++mappedPosAttrib;
+			}
 		}
 		mappedPosAttrib.unmap();
 	}
