@@ -72,19 +72,6 @@ struct SApp : App {
 
 		vboMesh = gl::VboMesh::create(plane, bufferLayout);
 
-		auto mappedPosAttrib = vboMesh->mapAttrib3f(geom::Attrib::POSITION, false);
-		for (int i = 0; i <= sx; i++) {
-			for (int j = 0; j <= sy; j++) {
-				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
-				vec3 &pos = *mappedPosAttrib;
-				//vec3 pos = vec3(walkers(i).pos, 0);
-				mappedPosAttrib->x = i;// +sin(pos.x) * 50;
-				mappedPosAttrib->y = j;// +sin(pos.y) * 50;
-				mappedPosAttrib->z = 0;
-				++mappedPosAttrib;
-			}
-		}
-		mappedPosAttrib.unmap();
 	}
 	void update()
 	{
@@ -113,14 +100,33 @@ struct SApp : App {
 		}
 
 		noiseTimeDim += .008f;
-		/*for (auto& walker: walkers) {
-			//walker.update();
-		}*/
-
+		for (auto& walker: walkers) {
+			walker.update();
+		}
+		updateMesh();
 		
 		//tex = gtex(texDld);
 	}
+	void updateMesh() {
+
+		auto mappedPosAttrib = vboMesh->mapAttrib3f(geom::Attrib::POSITION, false);
+		for (int i = 0; i <= sx; i++) {
+			for (int j = 0; j <= sy; j++) {
+				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
+				vec3 &pos = *mappedPosAttrib;
+				//vec3 pos = vec3(walkers(i).pos, 0);
+				mappedPosAttrib->x = walkers(i, j).pos.x;// +sin(pos.x) * 50;
+				mappedPosAttrib->y = walkers(i, j).pos.y;// +sin(pos.y) * 50;
+				mappedPosAttrib->z = 0;
+				++mappedPosAttrib;
+			}
+		}
+		mappedPosAttrib.unmap();
+	}
+
 	void stefanDraw() {
+		glDisable(GL_CULL_FACE);
+		
 		auto target = maketex(wsx, wsy, GL_RGB32F);
 		::beginRTT(target);
 
