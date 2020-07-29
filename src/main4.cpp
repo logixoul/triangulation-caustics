@@ -115,8 +115,9 @@ struct SApp : App {
 				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
 				vec3 &pos = *mappedPosAttrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
-				mappedPosAttrib->x = walkers(i, j).pos.x;// +sin(pos.x) * 50;
-				mappedPosAttrib->y = walkers(i, j).pos.y;// +sin(pos.y) * 50;
+				auto walker = walkers(i, j);
+				mappedPosAttrib->x = walker.pos.x + walker.displacement.x;// +sin(pos.x) * 50;
+				mappedPosAttrib->y = walker.pos.y + walker.displacement.y;// +sin(pos.y) * 50;
 				mappedPosAttrib->z = 0;
 				++mappedPosAttrib;
 			}
