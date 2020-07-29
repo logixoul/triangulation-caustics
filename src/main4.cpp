@@ -28,8 +28,8 @@ struct Walker {
 	}
 	void update() {
 		float nscale = 10 / (float)sx; // both for x and y so we preserve aspect ratio
-		displacement.x = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 0.0) * 40.0f;
-		displacement.y = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 1.0) * 40.0f;
+		displacement.x = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 0.0) * 40.0f*mouseX;
+		displacement.y = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 1.0) * 40.0f*mouseX;
 	}
 };
 
@@ -131,7 +131,7 @@ struct SApp : App {
 				//div += 10 * mouseX;
 				//cout << "div=" << div << endl;
 				//div *= -1;
-				mappedCustom0Attrib->x = max(0.0f, div);
+				mappedCustom0Attrib->x = max(0.0f, -div);
 				mappedCustom0Attrib->y = 0;
 				mappedCustom0Attrib->z = 0;
 				++mappedCustom0Attrib;
@@ -182,15 +182,16 @@ struct SApp : App {
 			gl::draw(vboMesh);
 		}
 		::endRTT();
-
+		gl::disableBlending();
 		target = shade2(target,
 			"vec3 c = vec3(fetch1());"
-			//"c /= c + 1;"
+			"c /= c + 1;"
+			"c = pow(c, vec3(1.0/2.2));" // gamma
 			"_out.rgb=c;");
 
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::setMatricesWindow(vec2(wsx, wsy), false);
-		gl::color(Colorf(.3*mouseY, .3*mouseY, .3*mouseY));
+		//gl::color(Colorf(.3*mouseY, .3*mouseY, .3*mouseY));
 		gl::draw(target, getWindowBounds());
 		gl::color(Colorf(1,1,1));
 	}
