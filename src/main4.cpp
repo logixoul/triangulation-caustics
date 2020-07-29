@@ -19,7 +19,7 @@ bool pause;
 
 gl::TextureRef tex;
 
-struct Walker {
+/*struct Walker {
 	vec2 pos;
 	vec2 vel;
 	vec2 acc;
@@ -33,7 +33,7 @@ struct Walker {
 	}
 };
 
-Array2D<Walker> walkers;
+Array2D<Walker> walkers;*/
 
 gl::GlslProgRef prog;
 gl::VboMeshRef	vboMesh;
@@ -49,10 +49,10 @@ struct SApp : App {
 
 		stefanfw::eventHandler.subscribeToEvents(*this);
 
-		walkers = Array2D<Walker>(sx+1, sy+1, Walker());
-		forxy(walkers) {
+		//walkers = Array2D<Walker>(sx+1, sy+1, Walker());
+		/*forxy(walkers) {
 			walkers(p).pos = p;
-		}
+		}*/
 
 		string vs = Str()
 			<< "#version 150"
@@ -76,8 +76,8 @@ struct SApp : App {
 		for (int i = 0; i < vboMesh->getNumVertices(); i++) {
 			vec3 &pos = *mappedPosAttrib;
 			//vec3 pos = vec3(walkers(i).pos, 0);
-			mappedPosAttrib->x = pos.x + sin(pos.x) * 50;
-			mappedPosAttrib->y = pos.y + sin(pos.y) * 50;
+			mappedPosAttrib->x = pos.x;// +sin(pos.x) * 50;
+			mappedPosAttrib->y = pos.y;// +sin(pos.y) * 50;
 			mappedPosAttrib->z = 0;
 			++mappedPosAttrib;
 		}
@@ -110,21 +110,21 @@ struct SApp : App {
 		}
 
 		noiseTimeDim += .008f;
-		for (auto& walker: walkers) {
+		/*for (auto& walker: walkers) {
 			//walker.update();
-		}
+		}*/
 
 		
 		//tex = gtex(texDld);
 	}
 	void stefanDraw() {
-		auto target = maketex(wsx, wsy, GL_RGB16F);
+		auto target = maketex(wsx, wsy, GL_RGB32F);
 		::beginRTT(target);
 
 		gl::setMatricesWindow(vec2(sx, sy), false);
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::disableDepthRead();
-		gl::color(Colorf(.03*mouseY,0,0));
+		gl::color(Colorf(.3*mouseY,0,0));
 		gl::enableAdditiveBlending();
 		{
 			gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
