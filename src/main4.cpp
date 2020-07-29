@@ -18,6 +18,7 @@ float noiseTimeDim = 0;
 bool pause;
 
 gl::TextureRef tex;
+Array2D<float> base;
 
 struct Walker {
 	vec2 pos;
@@ -50,6 +51,7 @@ struct SApp : App {
 		stefanfw::eventHandler.subscribeToEvents(*this);
 
 		walkers = Array2D<Walker>(sx+1, sy+1, Walker());
+		base = Array2D<float>(sx + 1, sy + 1, 0.0f);
 		forxy(walkers) {
 			walkers(p).pos = p;
 		}
@@ -81,7 +83,13 @@ struct SApp : App {
 			pause = !pause;
 		}
 	}
-
+	void updateBase() {
+		forxy(base) {
+			auto pos = p;
+			float nscale = 10 / (float)sx; // both for x and y so we preserve aspect ratio
+			base(p) = raw_noise_4d(pos.x * nscale, pos.y * nscale, noiseTimeDim, 0.0) * 40.0f*mouseX;
+		}
+	}
 	void stefanUpdate() {
 		float exponent = cfg1::getOpt("exponent", 2,
 			[&]() { return keys['e']; }, [&]() { return constrain<float>(mouseY, 0.0f, 1.0f) * 5; }
@@ -93,14 +101,18 @@ struct SApp : App {
 		}
 
 		noiseTimeDim += .008f;
+		updateBase();
+
 		for (auto& walker: walkers) {
-			walker.update();
+			//walker.update();
 		}
 		updateMesh();
 		
 		//tex = gtex(texDld);
 	}
 	void updateMesh() {
+
+		auto grads = ::get_gradients(base);
 
 		auto mappedPosAttrib = vboMesh->mapAttrib3f(geom::Attrib::POSITION, false);
 		for (int i = 0; i <= sx; i++) {
@@ -109,8 +121,8 @@ struct SApp : App {
 				vec3 &pos = *mappedPosAttrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
 				auto walker = walkers(i, j);
-				mappedPosAttrib->x = walker.pos.x + walker.displacement.x;// +sin(pos.x) * 50;
-				mappedPosAttrib->y = walker.pos.y + walker.displacement.y;// +sin(pos.y) * 50;
+				mappedPosAttrib->x = walker.pos.x + grads(i, j).x;// +sin(pos.x) * 50;
+				mappedPosAttrib->y = walker.pos.y + grads(i, j).y;// +sin(pos.y) * 50;
 				mappedPosAttrib->z = 0;
 				++mappedPosAttrib;
 			}
@@ -124,14 +136,14 @@ struct SApp : App {
 				vec3 &pos = *mappedCustom0Attrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
 				//auto walker = walkers(i, j);
-				auto getDisp = [&](int i, int j) { return walkers.wr(i, j).displacement; };
+				auto getDisp = [&](int i, int j) { return grads.wr(i, j); };
 				float div =
 					(getDisp(i+1, j).x - getDisp(i-1,j).x)
 					+ (getDisp(i, j + 1).y - getDisp(i, j - 1).y);
 				//div += 10 * mouseX;
 				//cout << "div=" << div << endl;
 				//div *= -1;
-				mappedCustom0Attrib->x = max(0.0f, -div);
+				mappedCustom0Attrib->x = max(0.0f, -div)*mouseY;
 				mappedCustom0Attrib->y = 0;
 				mappedCustom0Attrib->z = 0;
 				++mappedCustom0Attrib;
