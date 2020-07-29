@@ -143,7 +143,7 @@ struct SApp : App {
 				//div += 10 * mouseX;
 				//cout << "div=" << div << endl;
 				//div *= -1;
-				mappedCustom0Attrib->x = max(0.0f, -div)*mouseY;
+				mappedCustom0Attrib->x = max(0.0f, -div+2)*mouseY;
 				mappedCustom0Attrib->y = 0;
 				mappedCustom0Attrib->z = 0;
 				++mappedCustom0Attrib;
@@ -197,9 +197,11 @@ struct SApp : App {
 		gl::disableBlending();
 		target = shade2(target,
 			"float f = fetch1();"
+			//"f+=.2f;"
 			"vec3 c = pow(vec3(f), vec3(10, 3, 1));"
-			"c /= c + 1;"
-			"c = pow(c, vec3(1.0/2.2));" // gamma
+			//"c = max(vec3(0), min(vec3(1), c);"
+			//"c /= c + 1;"
+			//"c = pow(c, vec3(1.0/2.2));" // gamma
 			"_out.rgb=c;");
 
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
