@@ -54,20 +54,13 @@ struct SApp : App {
 			walkers(p).pos = p;
 		}
 
-		string vs = Str()
-			<< "#version 150"
-			<< "uniform mat4 ciModelViewProjection;"
-			<< "in vec4 ciPosition;"
-		
-			<< "void main()"
-			<< "{"
-			<< "	gl_Position = ciModelViewProjection * ciPosition;"
-			<< "}";
-
 		auto plane = geom::Plane().size(vec2(wsx, wsy)).subdivisions(ivec2(sx, sy))
 			.axes(vec3(1,0,0), vec3(0,1,0));
+		//geom::AttribInfo color;
+		//color.
 		vector<gl::VboMesh::Layout> bufferLayout = {
-			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::POSITION, 3)
+			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::POSITION, 3),
+			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::CUSTOM_0, 3)
 		};
 
 		vboMesh = gl::VboMesh::create(plane, bufferLayout);
@@ -137,7 +130,34 @@ struct SApp : App {
 		gl::color(Colorf(.3*mouseY,0,0));
 		gl::enableAdditiveBlending();
 		{
-			gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
+			auto vs = CI_GLSL(150,
+				uniform mat4 ciModelViewProjection;
+
+			in vec4 ciPosition;
+			in vec4 inCustom0;
+			out lowp vec4 Color;
+			void main(void)
+			{
+				gl_Position = ciModelViewProjection * ciPosition;
+				Color = inCustom0;
+			}
+			);
+			auto fs = CI_GLSL(150,
+				out vec4 oColor;
+				in vec4 Color;
+				void main(void)
+				{
+					oColor = vec4(1);// *Color;
+				}
+			);
+			//gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
+			static auto prog = gl::GlslProg::create(
+				gl::GlslProg::Format()
+				.attrib(geom::Attrib::CUSTOM_0, "inCustom0")
+				.fragment(fs)
+				.vertex(vs)
+				);
+			gl::ScopedGlslProg glslScope(prog);
 			gl::draw(vboMesh);
 		}
 		::endRTT();
