@@ -124,8 +124,8 @@ struct SApp : App {
 				vec3 &pos = *mappedCustom0Attrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
 				auto walker = walkers(i, j);
-				mappedCustom0Attrib->x = walker.pos.x + walker.displacement.x;// +sin(pos.x) * 50;
-				mappedCustom0Attrib->y = walker.pos.y + walker.displacement.y;// +sin(pos.y) * 50;
+				mappedCustom0Attrib->x = ci::randFloat();// +sin(pos.x) * 50;
+				mappedCustom0Attrib->y = ci::randFloat();// +sin(pos.y) * 50;
 				mappedCustom0Attrib->z = 0;
 				++mappedCustom0Attrib;
 			}
@@ -161,7 +161,7 @@ struct SApp : App {
 				in vec4 Color;
 				void main(void)
 				{
-					oColor = vec4(1);// *Color;
+					oColor = Color;
 				}
 			);
 			//gl::ScopedGlslProg glslScope(gl::getStockShader(gl::ShaderDef().color()));
@@ -178,7 +178,7 @@ struct SApp : App {
 
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::setMatricesWindow(vec2(wsx, wsy), false);
-		gl::color(Colorf(.3*mouseY, 0, 0));
+		gl::color(Colorf(.3*mouseY, .3*mouseY, .3*mouseY));
 		gl::draw(target, getWindowBounds());
 		gl::color(Colorf(1,1,1));
 	}
