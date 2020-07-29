@@ -123,9 +123,16 @@ struct SApp : App {
 				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
 				vec3 &pos = *mappedCustom0Attrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
-				auto walker = walkers(i, j);
-				mappedCustom0Attrib->x = ci::randFloat();// +sin(pos.x) * 50;
-				mappedCustom0Attrib->y = ci::randFloat();// +sin(pos.y) * 50;
+				//auto walker = walkers(i, j);
+				auto getDisp = [&](int i, int j) { return walkers.wr(i, j).displacement; };
+				float div =
+					(getDisp(i+1, j).x - getDisp(i-1,j).x)
+					+ (getDisp(i, j + 1).y - getDisp(i, j - 1).y);
+				//div += 10 * mouseX;
+				//cout << "div=" << div << endl;
+				//div *= -1;
+				mappedCustom0Attrib->x = max(0.0f, div);
+				mappedCustom0Attrib->y = 0;
 				mappedCustom0Attrib->z = 0;
 				++mappedCustom0Attrib;
 			}
@@ -175,6 +182,11 @@ struct SApp : App {
 			gl::draw(vboMesh);
 		}
 		::endRTT();
+
+		target = shade2(target,
+			"vec3 c = vec3(fetch1());"
+			//"c /= c + 1;"
+			"_out.rgb=c;");
 
 		gl::clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		gl::setMatricesWindow(vec2(wsx, wsy), false);
