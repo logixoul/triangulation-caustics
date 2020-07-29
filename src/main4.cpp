@@ -196,7 +196,8 @@ struct SApp : App {
 		::endRTT();
 		gl::disableBlending();
 		target = shade2(target,
-			"vec3 c = vec3(fetch1());"
+			"float f = fetch1();"
+			"vec3 c = pow(vec3(f), vec3(10, 3, 1));"
 			"c /= c + 1;"
 			"c = pow(c, vec3(1.0/2.2));" // gamma
 			"_out.rgb=c;");
