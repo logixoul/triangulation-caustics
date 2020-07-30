@@ -22,8 +22,6 @@ Array2D<float> base;
 
 struct Walker {
 	vec2 pos;
-	vec2 vel;
-	vec2 acc;
 	vec2 displacement;
 	Walker() {
 	}
@@ -58,11 +56,9 @@ struct SApp : App {
 
 		auto plane = geom::Plane().size(vec2(wsx, wsy)).subdivisions(ivec2(sx, sy))
 			.axes(vec3(1,0,0), vec3(0,1,0));
-		//geom::AttribInfo color;
-		//color.
 		vector<gl::VboMesh::Layout> bufferLayout = {
 			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::POSITION, 3),
-			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::CUSTOM_0, 3)
+			gl::VboMesh::Layout().usage(GL_DYNAMIC_DRAW).attrib(geom::Attrib::CUSTOM_0, 1)
 		};
 
 		vboMesh = gl::VboMesh::create(plane, bufferLayout);
@@ -129,11 +125,11 @@ struct SApp : App {
 		}
 		mappedPosAttrib.unmap();
 
-		auto mappedCustom0Attrib = vboMesh->mapAttrib3f(geom::Attrib::CUSTOM_0, false);
+		auto mappedCustom0Attrib = vboMesh->mapAttrib1f(geom::Attrib::CUSTOM_0, false);
 		for (int i = 0; i <= sx; i++) {
 			for (int j = 0; j <= sy; j++) {
 				//for (int i = 0; i < vboMesh->getNumVertices(); i++) {
-				vec3 &pos = *mappedCustom0Attrib;
+				float &pos = *mappedCustom0Attrib;
 				//vec3 pos = vec3(walkers(i).pos, 0);
 				//auto walker = walkers(i, j);
 				auto getDisp = [&](int i, int j) { return grads.wr(i, j); };
@@ -143,9 +139,7 @@ struct SApp : App {
 				//div += 10 * mouseX;
 				//cout << "div=" << div << endl;
 				//div *= -1;
-				mappedCustom0Attrib->x = max(0.0f, -div+2)*mouseY;
-				mappedCustom0Attrib->y = 0;
-				mappedCustom0Attrib->z = 0;
+				*mappedCustom0Attrib = max(0.0f, -div+2)*mouseY*2;
 				++mappedCustom0Attrib;
 			}
 		}
@@ -198,9 +192,9 @@ struct SApp : App {
 		target = shade2(target,
 			"float f = fetch1();"
 			//"f+=.2f;"
-			"vec3 c = pow(vec3(f), vec3(10, 3, 1));"
+			//"f /= f + 1;"
+			"vec3 c = pow(vec3(f), vec3(7, 2, 1));"
 			//"c = max(vec3(0), min(vec3(1), c);"
-			//"c /= c + 1;"
 			//"c = pow(c, vec3(1.0/2.2));" // gamma
 			"_out.rgb=c;");
 
